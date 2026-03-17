@@ -2,7 +2,7 @@
 #include <math.h>
 
 #include "mpi_base.h"
-
+#include "mp_structs.h" 
 
 // CIC weight function as defined in the paper Im et al. (1998) - eqn 24
 double spread_cic(double x, double L, double h) {
@@ -142,5 +142,12 @@ double update_charges(
 
     return q_tot;
 }
+
+double smooth_charges(grid *grid) {
+    // Just for testing, does not modify anything
+    (void)grid;  
+    return 1.0;
+}
+
 
 #endif

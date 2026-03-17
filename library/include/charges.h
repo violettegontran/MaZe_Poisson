@@ -11,4 +11,6 @@ double update_charges(
     double (*g)(double, double, double)
 );
 
+void smooth_charges(grid *grid);
+
 #endif // __MP_CHARGES_H

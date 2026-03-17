@@ -5,7 +5,7 @@
 #include "mpi_base.h"
 #include "mp_structs.h"
 
-char grid_type_str[GRID_TYPE_NUM][16] = {"LCG", "FFT", "MULTIGRID", "MAZE-LCG", "MAZE-MULTIGRID"}; 
+char grid_type_str[GRID_TYPE_NUM][16] = {"LCG", "FFT", "MULTIGRID", "MAZE-LCG", "MAZE-MULTIGRID", "P3MAZE"}; 
 int get_grid_type_num() {
     return GRID_TYPE_NUM;
 }
@@ -38,6 +38,9 @@ grid * grid_init(int n, double L, double h, double tol, double eps, double eps_i
             break;
         case GRID_TYPE_MAZE_MGRID:
             init_func = maze_multigrid_grid_init;  
+            break;
+        case GRID_TYPE_P3MAZE:
+            init_func = p3maze_grid_init;
             break;
         default:
             break;

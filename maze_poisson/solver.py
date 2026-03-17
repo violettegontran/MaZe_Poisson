@@ -24,6 +24,7 @@ method_grid_map: Dict[str, int] = {
     # 'MULTIGRID': 2,
     # 'MAZE-LCG': 3,
     # 'MAZE-MULTIGRID': 4
+    # 'P3MAZE': 5
 }
 
 integrator_map: Dict[str, int] = {
