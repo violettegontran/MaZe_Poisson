@@ -67,6 +67,7 @@ add_library(maze_poisson MODULE
     src/grid_multigrid.c
     src/grid_maze_multigrid.c
     src/grid_fft.c
+    src/grid_p3maze.c
     
     src/integrator_general.c
     src/integrator_ovrvo.c
