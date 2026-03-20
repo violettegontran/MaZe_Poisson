@@ -143,11 +143,5 @@ double update_charges(
     return q_tot;
 }
 
-double smooth_charges(grid *grid) {
-    // Just for testing, does not modify anything
-    (void)grid;  
-    return 1.0;
-}
-
 
 #endif

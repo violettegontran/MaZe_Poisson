@@ -10,7 +10,5 @@ double update_charges(
     double *pos, long int *neighbors, double *charges, double *q,
     double (*g)(double, double, double)
 );
-typedef struct grid grid;
-void smooth_charges(grid *grid);
 
 #endif // __MP_CHARGES_H
