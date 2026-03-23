@@ -16,6 +16,8 @@ from .myio.input import GridSetting, MDVariables, OutputSettings
 from .myio.loggers import Logger
 from .myio.output import save_json
 
+from scipy.ndimage import gaussian_filter
+
 np.random.seed(42)
 
 method_grid_map: Dict[str, int] = {
@@ -23,7 +25,7 @@ method_grid_map: Dict[str, int] = {
     # 'FFT': 1,
     # 'MULTIGRID': 2,
     # 'MAZE-LCG': 3,
-    # 'MAZE-MULTIGRID': 4
+    # 'MAZE-MULTIGRID': 4,
 }
 
 integrator_map: Dict[str, int] = {
@@ -376,6 +378,8 @@ class SolverMD(Logger):
             # STEP 0 Verlet
             # self.logger.debug("Running first step of MD loop (Verlet)...")
             self.update_charges()
+            if self.mdv.smoothing == True:
+                self.smoothing(); 
             # self.logger.debug("Updating k^2 grid for Poisson-Boltzmann...")
             self.update_eps_k2()
             # self.logger.debug("Initializing field...")
@@ -388,6 +392,8 @@ class SolverMD(Logger):
             self.integrator_part1()
             # self.logger.debug("Updating charges...")
             self.update_charges()
+            if self.mdv.smoothing == True:
+                self.smoothing(); 
             # self.logger.debug("Updating k^2 grid for Poisson-Boltzmann...")
             self.update_eps_k2()
             # self.logger.debug("Updating field...")
@@ -470,6 +476,22 @@ class SolverMD(Logger):
             self.logger.error('Error: change initial position, charge is not preserved.')
             sys.exit(1)
 
+    #Does not change the charge for testing purpose
+    def smoothing(self):
+        print("Performing smoothing.")
+        rho = np.zeros((self.N, self.N, self.N), dtype=np.float64)
+        capi.get_q(rho)
+        sigma = (self.mdv.R_c)/3
+        print(sigma)
+        rho_smooth = gaussian_filter(rho, sigma=1.0, mode='wrap')
+        print("before:", rho.sum())
+        print("after:", rho_smooth.sum())
+
+        rho_smooth = np.ascontiguousarray(rho_smooth)
+
+        capi.set_q(rho_smooth)
+
+    
     @Clock('integrator')
     def integrator_part1(self):
         """Update the position and velocity of the particles."""

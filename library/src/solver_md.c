@@ -352,3 +352,8 @@ void get_momentum(double *recv) {
 double get_temperature() {
     return g_particles->get_temperature(g_particles);
 }
+
+void set_q(double *q_new) {
+    long int size = g_grid->n * g_grid->n * g_grid->n;
+    memcpy(g_grid->q, q_new, size * sizeof(double));
+}

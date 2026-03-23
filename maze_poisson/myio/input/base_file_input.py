@@ -114,7 +114,9 @@ class MDVariables(BaseFileInput):
     integrator: str = 'OVRVO'  # Integrator method
     method: str = 'FFT'  # Method for solving the Poisson equation
     tol: float = 1e-7  # Tolerance for convergence
-
+    smoothing: bool = False #Decide wether perform smoohting of the charges or not
+    R_c: float = None #Cutoff distance
+    
     thermostat: bool = False  # Whether to use a thermostat
     gamma: float = 1e-3  # Damping coefficient for the thermostat
 

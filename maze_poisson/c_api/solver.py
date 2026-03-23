@@ -174,3 +174,10 @@ capi.register_function(
 capi.register_function(
     'solver_finalize', None, [],
 )
+
+# void set_q() {
+capi.register_function(
+    'set_q', None, [
+        npct.ndpointer(dtype=np.float64, ndim=3, flags='C_CONTIGUOUS'),
+    ],
+)
