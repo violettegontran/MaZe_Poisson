@@ -479,18 +479,22 @@ class SolverMD(Logger):
     #Does not change the charge for testing purpose
     def smoothing(self):
         print("Performing smoothing.")
+        if self.mdv.R_c is None:
+            raise ValueError("Cutoff radius not specified (R_c is None)")
         rho = np.zeros((self.N, self.N, self.N), dtype=np.float64)
         capi.get_q(rho)
-        sigma = (self.mdv.R_c)/3
-        print(sigma)
-        rho_smooth = gaussian_filter(rho, sigma=1.0, mode='wrap')
+
+        # Use Baker's relation to calculate sigma from cutoff radius
+        sigma = self.mdv.R_c / 3
+
+        rho_smooth = gaussian_filter(rho, sigma=sigma, mode='wrap')
         print("before:", rho.sum())
         print("after:", rho_smooth.sum())
 
         rho_smooth = np.ascontiguousarray(rho_smooth)
 
+        # Injection in C
         capi.set_q(rho_smooth)
-
     
     @Clock('integrator')
     def integrator_part1(self):
