@@ -490,15 +490,9 @@ class SolverMD(Logger):
         capi.get_q(rho)
 
         # Use Baker's relation to calculate sigma from cutoff radius
-        sigma = self.mdv.R_c / 3
-
-        rho_smooth = gaussian_filter(rho, sigma=sigma, mode='wrap')
-        #print("before:", rho.sum())
-        #print("after:", rho_smooth.sum())
-
+        rho_smooth = gaussian_filter(rho, sigma=self.mdv.R_c / 3, mode='wrap')
         rho_smooth = np.ascontiguousarray(rho_smooth)
-        print(np.max(rho), np.std(rho))
-        print(np.max(rho_smooth), np.std(rho_smooth))
+        
         # Injection in C
         capi.set_q(rho_smooth)
     
