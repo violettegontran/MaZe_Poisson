@@ -335,3 +335,12 @@ double compute_sc_forces(int n_p, double L, double *pos, double *params, double 
     }
     return potential_energy;
 }
+
+
+/*
+Compute the short range contribution of Coulomb's forces
+
+*/
+double compute_coulomb_sr() {
+    return 1;
+}

@@ -338,6 +338,11 @@ class SolverMD(Logger):
         elif potential == 'SC':
             pot_params = self.get_sc_params()
 
+        #Convert R_c for smoothing into atomic units
+        if self.mdv.smoothing:
+            self.mdv.R_c /= cst.a0
+            print(self.mdv.R_c)
+
         # print(f"Using potential parameters: {pot_params}")
 
         capi.solver_initialize_particles(
@@ -478,7 +483,7 @@ class SolverMD(Logger):
 
     #Does not change the charge for testing purpose
     def smoothing(self):
-        print("Performing smoothing.")
+        #print("Performing smoothing.")
         if self.mdv.R_c is None:
             raise ValueError("Cutoff radius not specified (R_c is None)")
         rho = np.zeros((self.N, self.N, self.N), dtype=np.float64)
@@ -488,11 +493,12 @@ class SolverMD(Logger):
         sigma = self.mdv.R_c / 3
 
         rho_smooth = gaussian_filter(rho, sigma=sigma, mode='wrap')
-        print("before:", rho.sum())
-        print("after:", rho_smooth.sum())
+        #print("before:", rho.sum())
+        #print("after:", rho_smooth.sum())
 
         rho_smooth = np.ascontiguousarray(rho_smooth)
-
+        print(np.max(rho), np.std(rho))
+        print(np.max(rho_smooth), np.std(rho_smooth))
         # Injection in C
         capi.set_q(rho_smooth)
     
@@ -511,6 +517,8 @@ class SolverMD(Logger):
         self.integrator_part1()
         if self.mdv.elec:
             self.update_charges()
+            if self.mdv.smoothing==True:
+                self.smoothing()
             self.update_eps_k2()
             self.n_iters = self.update_field()
             self.t_iters = Clock.get_clock('field').last_call
