@@ -779,9 +779,6 @@ void particles_compute_forces_tot(particles *p) {
     memset(p->fcs_tot, 0, size * sizeof(double));  // Initialize total forces to zero
     if (p->fcs_elec != NULL) {
         daxpy(p->fcs_elec, p->fcs_tot, 1.0, size);  // Add the electric forces
-        //if (p->fcs_coulomb_sr != NULL) {
-        //    daxpy(p->fcs_elec, p->fcs_tot, 1.0, size);  // Add the electric forces
-    }
     }
     if (p->fcs_noel != NULL) {
         daxpy(p->fcs_noel, p->fcs_tot, 1.0, size);
