@@ -52,6 +52,8 @@ capi.register_function(
         npct.ndpointer(dtype=np.float64, ndim=1, flags='C_CONTIGUOUS'),
         npct.ndpointer(dtype=np.float64, ndim=1, flags='C_CONTIGUOUS'),
         npct.ndpointer(dtype=np.float64, ndim=1, flags='C_CONTIGUOUS'),
+        ctypes.c_bool,   # smoothing
+        ctypes.c_double  # R_c
     ],
 )
 

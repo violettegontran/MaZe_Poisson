@@ -349,9 +349,9 @@ class SolverMD(Logger):
             self.N, self.N_typs, self.L, self.h, self.N_p,
             pot_id, ca_scheme_id,
             types, pos, vel, mass, charges,
-            pot_params
+            pot_params, self.mdv.smoothing, self.mdv.R_c
         )
-
+        
         if self.mdv.poisson_boltzmann:
             if 'radius' not in particles.columns:
                 raise ValueError("Probe radius must be provided in the input file for Poisson-Boltzmann.")

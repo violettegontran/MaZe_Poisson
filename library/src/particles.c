@@ -224,6 +224,8 @@ void particles_init_potential_tf(particles *p, double *pot_params) {
         }
     }
 
+    
+
     p->compute_forces_noel = particles_compute_forces_tf;
 }
 
