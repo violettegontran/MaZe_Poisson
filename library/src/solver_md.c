@@ -56,6 +56,9 @@ void solver_initialize_particles(
 {
     g_particles = particles_init(n, n_p, n_typ, L, h, cas_type);
 
+    g_particles->smoothing = smoothing;
+    g_particles->R_c = R_c;
+
     memcpy(g_particles->types, types, n_p * sizeof(int));
     memcpy(g_particles->pos, pos, n_p * 3 * sizeof(double));
     memcpy(g_particles->vel, vel, n_p * 3 * sizeof(double));

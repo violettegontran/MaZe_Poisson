@@ -105,6 +105,8 @@ particles * particles_init(int n, int n_p, int n_typ, double L, double h, int ca
     p->get_momentum = particles_get_momentum;
     p->rescale_velocities = particles_rescale_velocities;
 
+    p-> smoothing = false;
+    p->R_c = 0.0;
     return p;
 }
 

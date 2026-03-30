@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #ifndef __MP_STRUCTS_H
 #define __MP_STRUCTS_H
 
@@ -225,6 +227,9 @@ struct particles {
     void    (*get_momentum)( particles *, double *);
 
     void    (*rescale_velocities)( particles *);
+
+    bool smoothing; 
+    double R_c;
 };
 
 struct integrator {
