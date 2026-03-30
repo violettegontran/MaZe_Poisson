@@ -7,6 +7,66 @@
 #include "linalg.h"
 #include <stdbool.h>
 
+void compute_force_short_range(
+    int ip, int n_p,
+    double *pos,
+    double *charges,
+    double *f_i,      //pointer to forces[ip*3]
+    double R_c,
+    double L
+) {
+    double px = pos[3*ip];
+    double py = pos[3*ip + 1];
+    double pz = pos[3*ip + 2];
+    double qi = charges[ip];
+
+    double sigma = R_c / 3.0; 
+
+
+    for (int jp = 0; jp < n_p; jp++) {
+
+        if (jp == ip) continue; // Skip self-interaction
+
+        double dx = px - pos[3*jp]; // Calculate the distance in x direction
+        double dy = py - pos[3*jp + 1]; // Calculate the distance in y direction
+        double dz = pz - pos[3*jp + 2]; // Calculate the distance in z direction
+
+        //  periodic boundary conditions
+        dx -= L * round(dx / L); 
+        dy -= L * round(dy / L);
+        dz -= L * round(dz / L);
+
+        double r2 = dx*dx + dy*dy + dz*dz; // Square of the distance
+        double r = sqrt(r2);
+
+        if (r > R_c) continue; // Skip if outside cutoff
+
+        double qj = charges[jp]; 
+
+        double inv_r = 1.0 / r;
+        double inv_r2 = inv_r * inv_r;
+        double inv_r3 = inv_r2 * inv_r;
+
+        double x = r / sigma;
+
+        double erf_term = 1.0 - erf(x);
+        double exp_term = exp(-x*x);
+
+        double factor =
+            qi * qj *
+            (
+                erf_term * inv_r3 +
+                (2.0 / (sqrt(M_PI) * sigma)) * exp_term * inv_r2
+            );
+
+        
+        f_i[0] += factor * dx;
+        f_i[1] += factor * dy;
+        f_i[2] += factor * dz;
+    }
+}
+
+
 // /*
 // Compute the forces on each particle by computing the field from the potential using finite differences.
 // New version computes the field only where the particles are located.
@@ -49,7 +109,8 @@ double compute_force_fd(
     // Exchange the top and bottom slices
     mpi_grid_exchange_bot_top(phi, n_loc, n);
 
-    printf(smoothing ? "Using smoothing with R_c = %f\n" : "Not using smoothing\n", R_c);
+    //printf(smoothing ? "Using smoothing with R_c = %f\n" : "Not using smoothing\n", R_c);
+     
     double sum_q = 0.0;
     #pragma omp parallel for private(i, j, k, i0, i1, i2, in2, j0, j1, j2, jn, k0, k1, k2, E, qc, px, py, pz, chg) reduction(+:sum_q)
     for (int ip = 0; ip < n_p; ip++) {
@@ -62,6 +123,18 @@ double compute_force_fd(
         py = pos[j0 + 1];
         pz = pos[j0 + 2];
         chg = charges[ip];
+        
+        if (smoothing) {
+            compute_force_short_range(
+                ip, n_p,
+                pos,
+                charges,
+                &forces[j0],   
+                R_c,
+                L
+            );
+        }
+
         // printf("ip: %d, chg: %f, px: %f, py: %f, pz: %f L: %f, h: %f\n", ip, chg, px, py, pz, L, h);
         for (int in = 0; in < nn3; in += 3) {
             i1 = i0 + in;
@@ -100,12 +173,6 @@ double compute_force_fd(
 
     return sum_q;
 }
-
-double compute_force_short_range()
-{
-    return 1;
-}
-
 
 /*
 Compute the particle-particle forces using the tabulated Tosi-Fumi potential
