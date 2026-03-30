@@ -5,6 +5,7 @@
 
 #include "mpi_base.h"
 #include "linalg.h"
+#include <stdbool.h>
 
 // /*
 // Compute the forces on each particle by computing the field from the potential using finite differences.
@@ -26,7 +27,7 @@
 double compute_force_fd(
     int n_grid, int n_p, double h, int num_neigh,
     double *phi, long int *neighbors, double *charges, double *pos, double *forces,
-    double (*g)(double, double, double)
+    double (*g)(double, double, double), bool smoothing, double R_c
 ) {
     int nn3 = num_neigh * 3;
     long int n = n_grid;
@@ -48,6 +49,7 @@ double compute_force_fd(
     // Exchange the top and bottom slices
     mpi_grid_exchange_bot_top(phi, n_loc, n);
 
+    printf(smoothing ? "Using smoothing with R_c = %f\n" : "Not using smoothing\n", R_c);
     double sum_q = 0.0;
     #pragma omp parallel for private(i, j, k, i0, i1, i2, in2, j0, j1, j2, jn, k0, k1, k2, E, qc, px, py, pz, chg) reduction(+:sum_q)
     for (int ip = 0; ip < n_p; ip++) {
@@ -98,6 +100,12 @@ double compute_force_fd(
 
     return sum_q;
 }
+
+double compute_force_short_range()
+{
+    return 1;
+}
+
 
 /*
 Compute the particle-particle forces using the tabulated Tosi-Fumi potential

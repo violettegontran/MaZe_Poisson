@@ -392,7 +392,7 @@ double particles_compute_forces_field(particles *p, grid *grid) {
     return compute_force_fd(
         p->n, p->n_p, p->h, p->num_neighbors,
         grid->phi_n, p->neighbors, p->charges, p->pos, p->fcs_elec,
-        p->charges_spread_func
+        p->charges_spread_func, p->smoothing, p->R_c
     );
 }
 
