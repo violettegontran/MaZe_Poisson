@@ -18,14 +18,13 @@ void compute_force_short_range(
     double sigma = R_c / 3.0;
 
     for (int ip = 0; ip < n_p; ip++) {
-
+        // mpi_fprintf(stderr,"Computing short-range forces for particle %d...\n", ip);
         double px = pos[3*ip];
         double py = pos[3*ip + 1];
         double pz = pos[3*ip + 2];
         double qi = charges[ip];
 
         for (int jp = ip + 1; jp < n_p; jp++) {
-
             double dx = px - pos[3*jp];
             double dy = py - pos[3*jp + 1];
             double dz = pz - pos[3*jp + 2];
@@ -46,7 +45,7 @@ void compute_force_short_range(
             double inv_r2 = inv_r * inv_r;
             double inv_r3 = inv_r2 * inv_r;
 
-            double x = r / sigma;
+            double x = r / (sqrt(2.0) * sigma);
 
             double erf_term = 1.0 - erf(x);
             double exp_term = exp(-x*x);
@@ -55,7 +54,7 @@ void compute_force_short_range(
                 qi * qj *
                 (
                     erf_term * inv_r3 +
-                    (2.0 / (sqrt(M_PI) * sigma)) * exp_term * inv_r2
+                    (sqrt(2.0) / (sqrt(M_PI) * sigma)) * exp_term * inv_r2
                 );
 
             double fx = factor * dx;
@@ -70,6 +69,7 @@ void compute_force_short_range(
             forces[3*jp]     -= fx;
             forces[3*jp + 1] -= fy;
             forces[3*jp + 2] -= fz;
+            // mpi_fprintf(stderr,"Short-range force between particles %d and %d: fx = %f, fy = %f, fz = %f\n", ip, jp, fx, fy, fz);
         }
     }
 }
@@ -178,10 +178,13 @@ double compute_force_fd(
     }
 
     //add the short-range forces to the total forces
-    
+    // mpi_fprintf(stderr, "Adding short-range forces to the total forces...\n");
+    // mpi_fprintf(stderr, "Before forces: %f %f %f\n", forces[0], forces[1], forces[2]);
     for (int i = 0; i < 3 * n_p; i++) {
         forces[i] += forces_sr[i];
+        // mpi_fprintf(stderr, "forces_sr[%d] = %f\n", i, forces_sr[i]);
     }
+    // mpi_fprintf(stderr, "After forces: %f %f %f\n\n", forces[0], forces[1], forces[2]);
     allreduce_sum(&sum_q, 1);
     allreduce_sum(forces, 3 * n_p);
 

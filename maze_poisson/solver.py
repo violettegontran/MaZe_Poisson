@@ -489,8 +489,9 @@ class SolverMD(Logger):
         rho = np.zeros((self.N, self.N, self.N), dtype=np.float64)
         capi.get_q(rho)
 
-        # Use Baker's relation to calculate sigma from cutoff radius
-        rho_smooth = gaussian_filter(rho, sigma=self.mdv.R_c / 3, mode='wrap')
+        # gaussian_filter expects sigma in grid-cell units, while R_c is in length units.
+        sigma_grid = (self.mdv.R_c / 3) / self.h
+        rho_smooth = gaussian_filter(rho, sigma=sigma_grid, mode='wrap')
         rho_smooth = np.ascontiguousarray(rho_smooth)
         
         # Injection in C
