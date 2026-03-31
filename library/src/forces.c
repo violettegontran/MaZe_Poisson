@@ -8,64 +8,71 @@
 #include <stdbool.h>
 
 void compute_force_short_range(
-    int ip, int n_p,
+    int n_p,
     double *pos,
     double *charges,
-    double *f_i,      //pointer to forces[ip*3]
+    double *forces, // Output forces on each particle (n_p, 3)
     double R_c,
     double L
 ) {
-    double px = pos[3*ip];
-    double py = pos[3*ip + 1];
-    double pz = pos[3*ip + 2];
-    double qi = charges[ip];
+    double sigma = R_c / 3.0;
 
-    double sigma = R_c / 3.0; 
+    for (int ip = 0; ip < n_p; ip++) {
 
+        double px = pos[3*ip];
+        double py = pos[3*ip + 1];
+        double pz = pos[3*ip + 2];
+        double qi = charges[ip];
 
-    for (int jp = 0; jp < n_p; jp++) {
+        for (int jp = ip + 1; jp < n_p; jp++) {
 
-        if (jp == ip) continue; // Skip self-interaction
+            double dx = px - pos[3*jp];
+            double dy = py - pos[3*jp + 1];
+            double dz = pz - pos[3*jp + 2];
 
-        double dx = px - pos[3*jp]; // Calculate the distance in x direction
-        double dy = py - pos[3*jp + 1]; // Calculate the distance in y direction
-        double dz = pz - pos[3*jp + 2]; // Calculate the distance in z direction
+            // PBC
+            dx -= L * round(dx / L);
+            dy -= L * round(dy / L);
+            dz -= L * round(dz / L);
 
-        //  periodic boundary conditions
-        dx -= L * round(dx / L); 
-        dy -= L * round(dy / L);
-        dz -= L * round(dz / L);
+            double r2 = dx*dx + dy*dy + dz*dz;
+            double r = sqrt(r2);
 
-        double r2 = dx*dx + dy*dy + dz*dz; // Square of the distance
-        double r = sqrt(r2);
+            if (r > R_c || r == 0.0) continue;
 
-        if (r > R_c) continue; // Skip if outside cutoff
+            double qj = charges[jp];
 
-        double qj = charges[jp]; 
+            double inv_r = 1.0 / r;
+            double inv_r2 = inv_r * inv_r;
+            double inv_r3 = inv_r2 * inv_r;
 
-        double inv_r = 1.0 / r;
-        double inv_r2 = inv_r * inv_r;
-        double inv_r3 = inv_r2 * inv_r;
+            double x = r / sigma;
 
-        double x = r / sigma;
+            double erf_term = 1.0 - erf(x);
+            double exp_term = exp(-x*x);
 
-        double erf_term = 1.0 - erf(x);
-        double exp_term = exp(-x*x);
+            double factor =
+                qi * qj *
+                (
+                    erf_term * inv_r3 +
+                    (2.0 / (sqrt(M_PI) * sigma)) * exp_term * inv_r2
+                );
 
-        double factor =
-            qi * qj *
-            (
-                erf_term * inv_r3 +
-                (2.0 / (sqrt(M_PI) * sigma)) * exp_term * inv_r2
-            );
+            double fx = factor * dx;
+            double fy = factor * dy;
+            double fz = factor * dz;
 
-        
-        f_i[0] += factor * dx;
-        f_i[1] += factor * dy;
-        f_i[2] += factor * dz;
+            forces[3*ip]     += fx;
+            forces[3*ip + 1] += fy;
+            forces[3*ip + 2] += fz;
+
+            // Use symmetry to update the force on particle jp
+            forces[3*jp]     -= fx;
+            forces[3*jp + 1] -= fy;
+            forces[3*jp + 2] -= fz;
+        }
     }
 }
-
 
 // /*
 // Compute the forces on each particle by computing the field from the potential using finite differences.
@@ -99,6 +106,8 @@ double compute_force_fd(
     long int k0, k1, k2;
     double E, qc;
 
+    double *forces_sr = calloc(3 * n_p, sizeof(double)); // Temporary array to store short-range forces
+
     int n_loc = get_n_loc();
     int n_start = get_n_start();
 
@@ -110,6 +119,17 @@ double compute_force_fd(
     mpi_grid_exchange_bot_top(phi, n_loc, n);
 
     //printf(smoothing ? "Using smoothing with R_c = %f\n" : "Not using smoothing\n", R_c);
+
+    if (smoothing) {
+        compute_force_short_range(
+            n_p,
+            pos,
+            charges,
+            forces_sr, 
+            R_c,
+            L
+        );
+    }
      
     double sum_q = 0.0;
     #pragma omp parallel for private(i, j, k, i0, i1, i2, in2, j0, j1, j2, jn, k0, k1, k2, E, qc, px, py, pz, chg) reduction(+:sum_q)
@@ -123,17 +143,6 @@ double compute_force_fd(
         py = pos[j0 + 1];
         pz = pos[j0 + 2];
         chg = charges[ip];
-        
-        if (smoothing) {
-            compute_force_short_range(
-                ip, n_p,
-                pos,
-                charges,
-                &forces[j0],   
-                R_c,
-                L
-            );
-        }
 
         // printf("ip: %d, chg: %f, px: %f, py: %f, pz: %f L: %f, h: %f\n", ip, chg, px, py, pz, L, h);
         for (int in = 0; in < nn3; in += 3) {
@@ -168,6 +177,11 @@ double compute_force_fd(
         }
     }
 
+    //add the short-range forces to the total forces
+    
+    for (int i = 0; i < 3 * n_p; i++) {
+        forces[i] += forces_sr[i];
+    }
     allreduce_sum(&sum_q, 1);
     allreduce_sum(forces, 3 * n_p);
 
