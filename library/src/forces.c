@@ -131,6 +131,7 @@ double compute_force_fd(
         );
     }
      
+    printf(forces_sr[0] != 0.0 ? "Short-range forces computed\n" : "No short-range forces computed\n");
     double sum_q = 0.0;
     #pragma omp parallel for private(i, j, k, i0, i1, i2, in2, j0, j1, j2, jn, k0, k1, k2, E, qc, px, py, pz, chg) reduction(+:sum_q)
     for (int ip = 0; ip < n_p; ip++) {
