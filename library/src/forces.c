@@ -50,6 +50,20 @@ void compute_force_short_range(
             double erf_term = 1.0 - erf(x);
             double exp_term = exp(-x*x);
 
+            double inv_rc  =1.0 / R_c;
+            double inv_r2c = inv_rc * inv_rc;
+            double inv_r3c = inv_r2c * inv_rc;
+            double xc = R_c / (sqrt(2.0) * sigma);
+            double erf_term_c = 1.0 - erf(xc);
+            double exp_term_c = exp(-xc*xc);
+
+            double factor_c =
+                qi * qj *
+                (
+                    erf_term_c * inv_r3c +
+                    (sqrt(2.0) / (sqrt(M_PI) * sigma)) * exp_term_c * inv_r2c
+                );
+
             double factor =
                 qi * qj *
                 (
@@ -57,9 +71,12 @@ void compute_force_short_range(
                     (sqrt(2.0) / (sqrt(M_PI) * sigma)) * exp_term * inv_r2
                 );
 
-            double fx = factor * dx;
-            double fy = factor * dy;
-            double fz = factor * dz;
+            //Apply shifted of the forces to ensure that the forces go to zero at the cutoff distance
+            double shift = factor - factor_c;
+
+            double fx = shift * dx;
+            double fy = shift * dy;
+            double fz = shift * dz;
 
             forces[3*ip]     += fx;
             forces[3*ip + 1] += fy;
