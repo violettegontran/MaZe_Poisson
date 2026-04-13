@@ -104,6 +104,7 @@ particles * particles_init(int n, int n_p, int n_typ, double L, double h, int ca
     p->get_kinetic_energy = particles_get_kinetic_energy;
     p->get_momentum = particles_get_momentum;
     p->rescale_velocities = particles_rescale_velocities;
+    // p->rescale_velocities = particles_rescale_momenta;
 
     p-> smoothing = false;
     p->R_c = 0.0;
@@ -842,21 +843,84 @@ void particles_get_momentum(particles *p, double *out) {
     out[2] = pz;
 }
 
+// removes average velocity per species
 void particles_rescale_velocities(particles *p) {
     double *init_vel = (double *)calloc(p->n_typ * 3, sizeof(double));
+    int *type_counts = (int *)calloc(p->n_typ, sizeof(int));
 
-    for (int i = 0; i < p->n_p; i++) {
-        for (int j = 0; j < 3; j++) {
-            init_vel[p->types[i] * 3 + j] += p->vel[i * 3 + j];
-        }
+    if (init_vel == NULL || type_counts == NULL) {
+        mpi_fprintf(stderr, "Failed to allocate buffers for velocity rescaling\n");
+        free(init_vel);
+        free(type_counts);
+        exit(1);
     }
 
     for (int i = 0; i < p->n_p; i++) {
+        int type = p->types[i];
+        if (type < 0 || type >= p->n_typ) {
+            mpi_fprintf(stderr, "Invalid particle type %d for particle %d\n", type, i);
+            free(init_vel);
+            free(type_counts);
+            exit(1);
+        }
+
+        type_counts[type]++;
         for (int j = 0; j < 3; j++) {
-            p->vel[i * 3 + j] -= 2 * init_vel[p->types[i] * 3 + j] / p->n_p;
+            init_vel[type * 3 + j] += p->vel[i * 3 + j];
+        }
+    }
+    
+    for (int i = 0; i < p->n_p; i++) {
+        int type = p->types[i];
+        for (int j = 0; j < 3; j++) {
+            p->vel[i * 3 + j] -= init_vel[type * 3 + j] / type_counts[type];
         }
     }
 
     free(init_vel);
+    free(type_counts);
 }
 
+// removes averge velocity of the center of mass - works for any number of species and populations
+void particles_rescale_momenta(particles *p) {
+    long int ni;
+    double px = 0.0, py = 0.0, pz = 0.0;
+    double m_tot = 0.0;
+
+    #pragma omp parallel for private(ni) reduction(+:px, py, pz, m_tot)
+    for (int i = 0; i < p->n_p; i++) {
+        ni = i * 3;
+        px += p->mass[i] * p->vel[ni];
+        py += p->mass[i] * p->vel[ni + 1];
+        pz += p->mass[i] * p->vel[ni + 2];
+        m_tot += p->mass[i];
+    }
+
+    if (m_tot <= 0.0) {
+        return;
+    }
+
+    double vx_cm = px / m_tot;
+    double vy_cm = py / m_tot;
+    double vz_cm = pz / m_tot;
+
+    #pragma omp parallel for private(ni)
+    for (int i = 0; i < p->n_p; i++) {
+        ni = i * 3;
+        p->vel[ni]     -= vx_cm;
+        p->vel[ni + 1] -= vy_cm;
+        p->vel[ni + 2] -= vz_cm;
+    }
+
+    px = 0.0;
+    py = 0.0;
+    pz = 0.0;
+    #pragma omp parallel for private(ni) reduction(+:px, py, pz)
+    for (int i = 0; i < p->n_p; i++) {
+        ni = i * 3;
+        px += p->mass[i] * p->vel[ni];
+        py += p->mass[i] * p->vel[ni + 1];
+        pz += p->mass[i] * p->vel[ni + 2];
+    }
+    mpi_printf("total momentum after rescale: %e %e %e\n", px, py, pz);
+}

@@ -338,10 +338,12 @@ class SolverMD(Logger):
         elif potential == 'SC':
             pot_params = self.get_sc_params()
 
-        #Convert R_c for smoothing into atomic units
+        # Pass a concrete cutoff value to the C API even when smoothing is disabled.
+        R_c = 0.0
         if self.mdv.smoothing:
-            self.mdv.R_c /= cst.a0
-            print(self.mdv.R_c)
+            if self.mdv.R_c is None:
+                raise ValueError("Cutoff radius not specified (R_c is None)")
+            R_c = self.mdv.R_c / cst.a0
 
         # print(f"Using potential parameters: {pot_params}")
 
@@ -349,7 +351,7 @@ class SolverMD(Logger):
             self.N, self.N_typs, self.L, self.h, self.N_p,
             pot_id, ca_scheme_id,
             types, pos, vel, mass, charges,
-            pot_params, self.mdv.smoothing, self.mdv.R_c
+            pot_params, self.mdv.smoothing, R_c
         )
         
         if self.mdv.poisson_boltzmann:

@@ -104,6 +104,7 @@ double particles_get_temperature(particles *p);
 double particles_get_kinetic_energy(particles *p);
 void particles_get_momentum(particles *p, double *out);
 void particles_rescale_velocities(particles *p);
+void particles_rescale_momenta(particles *p);
 
 void ovrvo_integrator_init(integrator *integrator);
 void ovrvo_integrator_part1(integrator *integrator, particles *p);
