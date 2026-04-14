@@ -414,7 +414,7 @@ double particles_compute_energy_short_range(particles *p) {
     if (! p->smoothing) {
         return 0.0;  // No short-range contribution if smoothing is not enabled
     }
-    return compute_energy_short_range(p->n_p, p->pos, p->charges, p->R_c, p->L);
+    return compute_energy_short_range_pairwise(p->n_p, p->pos, p->charges, p->R_c, p->L);
 }
 
 double calc_h_ratio(double rad, double w2, double w3) {

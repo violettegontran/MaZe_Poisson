@@ -15,7 +15,7 @@ void compute_force_short_range(
     double R_c,
     double L
 );
-double compute_energy_short_range(int n_p, double *pos, double *charges, double R_c, double L);
+double compute_energy_short_range_pairwise(int n_p, double *pos, double *charges, double R_c, double L);
 double compute_tf_forces(int n_p, double L, double *pos, double *params, double r_cut, double *forces);
 double compute_sc_forces(int n_p, double L, double *pos, double *params, double r_cut, double *forces);
 double compute_lj_forces(int n_p, double L, double *pos, double *params, double r_cut, double *forces);

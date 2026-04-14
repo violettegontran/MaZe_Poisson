@@ -91,7 +91,7 @@ void compute_force_short_range(
     }
 }
 
-double compute_energy_short_range(
+double compute_energy_short_range_pairwise(
     int n_p,
     double *pos,
     double *charges,
