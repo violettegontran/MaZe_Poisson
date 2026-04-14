@@ -91,6 +91,55 @@ void compute_force_short_range(
     }
 }
 
+double compute_energy_short_range(
+    int n_p,
+    double *pos,
+    double *charges,
+    double R_c,
+    double L
+) {
+    double sigma = R_c / 3.0;
+    double energy = 0.0;
+
+    for (int ip = 0; ip < n_p; ip++) {
+
+        double px = pos[3 * ip];
+        double py = pos[3 * ip + 1];
+        double pz = pos[3 * ip + 2];
+        double qi = charges[ip];
+
+        for (int jp = ip + 1; jp < n_p; jp++) {
+
+            double dx = px - pos[3 * jp];
+            double dy = py - pos[3 * jp + 1];
+            double dz = pz - pos[3 * jp + 2];
+
+            // PBC
+            dx -= L * round(dx / L);
+            dy -= L * round(dy / L);
+            dz -= L * round(dz / L);
+
+            double r2 = dx * dx + dy * dy + dz * dz;
+            double r  = sqrt(r2);
+
+            if (r > R_c || r == 0.0) continue;
+
+            double qj = charges[jp];
+
+            double x = r / (sqrt(2.0) * sigma);
+            double erf_term = 1.0 - erf(x);
+
+            // potentiel
+            double V = qi * qj * erf_term / r;
+
+            energy += V;
+        }
+    }
+
+    return energy;
+}
+
+
 // /*
 // Compute the forces on each particle by computing the field from the potential using finite differences.
 // New version computes the field only where the particles are located.
@@ -148,7 +197,7 @@ double compute_force_fd(
         );
     }
      
-    printf(forces_sr[0] != 0.0 ? "Short-range forces computed\n" : "No short-range forces computed\n");
+    //printf(forces_sr[0] != 0.0 ? "Short-range forces computed\n" : "No short-range forces computed\n");
     double sum_q = 0.0;
     #pragma omp parallel for private(i, j, k, i0, i1, i2, in2, j0, j1, j2, jn, k0, k1, k2, E, qc, px, py, pz, chg) reduction(+:sum_q)
     for (int ip = 0; ip < n_p; ip++) {
@@ -294,6 +343,7 @@ double compute_tf_forces(int n_p, double L, double *pos, double *params, double 
 
     return potential_energy / 2;
 }
+
 
 
 /*
@@ -454,3 +504,4 @@ Compute the short range contribution of Coulomb's forces
 double compute_coulomb_sr() {
     return 1;
 }
+

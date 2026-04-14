@@ -97,6 +97,7 @@ double particles_compute_forces_field(particles *p, grid *grid);
 double particles_compute_forces_tf(particles *p);
 double particles_compute_forces_lj(particles *p);
 double particles_compute_forces_sc(particles *p);
+double particles_compute_energy_short_range(particles *p);
 double particles_compute_forces_pb(particles *p, grid *grid);
 void particles_compute_forces_tot(particles *p);
 
@@ -220,6 +221,7 @@ struct particles {
 
     double  (*compute_forces_field)( particles *, grid *);
     double  (*compute_forces_noel)( particles *);
+    double (*compute_energy_short_range)( particles *);
     void    (*compute_forces_tot)( particles *);
     double  (*compute_forces_pb)( particles *, grid *);
 

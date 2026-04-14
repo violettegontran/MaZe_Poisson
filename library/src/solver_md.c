@@ -345,6 +345,10 @@ double get_kinetic_energy() {
     return g_particles->get_kinetic_energy(g_particles);
 }
 
+double compute_energy_short_range() {
+    return g_particles->compute_energy_short_range(g_particles);
+}
+
 double get_energy_elec() {
     return grid_get_energy_elec(g_grid);
 }
