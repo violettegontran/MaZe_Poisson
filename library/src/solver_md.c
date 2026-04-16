@@ -141,8 +141,8 @@ void solver_update_eps_k2() {
     grid_update_eps_and_k2(g_grid, g_particles);
 }
 
-void solver_compute_forces_elec() {
-    g_particles->compute_forces_field(g_particles, g_grid);
+double solver_compute_forces_elec() {
+    return g_particles->compute_forces_field(g_particles, g_grid);
 }
 
 double solver_compute_forces_noel() {
@@ -345,9 +345,9 @@ double get_kinetic_energy() {
     return g_particles->get_kinetic_energy(g_particles);
 }
 
-double compute_energy_short_range() {
-    return g_particles->compute_energy_short_range(g_particles);
-}
+// double compute_energy_short_range() {
+//     return g_particles->compute_energy_short_range(g_particles);
+// }
 
 double get_energy_elec() {
     return grid_get_energy_elec(g_grid);

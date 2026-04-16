@@ -74,7 +74,9 @@ class SolverMD(Logger):
 
         self.n_iters = 0
 
+        self.potential_notelec = 0.0
         self.energy_nonpolar = 0.0
+        self.potential_short_range = 0.0
 
         if self.outset.print_restart:
             outset.restart_step = outset.restart_step or mdv.N_steps
@@ -457,7 +459,7 @@ class SolverMD(Logger):
     def compute_forces_field(self):
         """Compute the forces on the particles due to the electric field."""
         # self.logger.debug("Computing forces due to electric field...")
-        capi.solver_compute_forces_elec()
+        self.potential_short_range = capi.solver_compute_forces_elec()
 
     @Clock('forces_notelec')
     def compute_forces_notelec(self):

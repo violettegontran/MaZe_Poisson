@@ -7,15 +7,14 @@ double compute_force_fd(
     double *phi, long int *neighbors, double *charges, double *pos, double *forces,
     double (*g)(double, double, double), bool smoothing, double R_c
 );
-void compute_force_short_range(
-    int ip, int n_p,
+double compute_force_short_range(
+    int n_p,
     double *pos,
     double *charges,
     double *forces,
     double R_c,
     double L
 );
-double compute_energy_short_range_pairwise(int n_p, double *pos, double *charges, double R_c, double L);
 double compute_tf_forces(int n_p, double L, double *pos, double *params, double r_cut, double *forces);
 double compute_sc_forces(int n_p, double L, double *pos, double *params, double r_cut, double *forces);
 double compute_lj_forces(int n_p, double L, double *pos, double *params, double r_cut, double *forces);

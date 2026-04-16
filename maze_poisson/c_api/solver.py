@@ -112,9 +112,9 @@ capi.register_function(
     'solver_update_eps_k2', None, [],
 )
 
-# void solver_compute_forces_elec() {
+# double solver_compute_forces_elec() {
 capi.register_function(
-    'solver_compute_forces_elec', None, [],
+    'solver_compute_forces_elec', ctypes.c_double, [],
 )
 
 # double solver_compute_forces_noel() {

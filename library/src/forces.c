@@ -7,7 +7,7 @@
 #include "linalg.h"
 #include <stdbool.h>
 
-void compute_force_short_range(
+double compute_force_short_range(
     int n_p,
     double *pos,
     double *charges,
@@ -16,6 +16,7 @@ void compute_force_short_range(
     double L
 ) {
     double sigma = R_c / 3.0;
+    double shift_potential, potential = 0.0;
 
     for (int ip = 0; ip < n_p; ip++) {
         // mpi_fprintf(stderr,"Computing short-range forces for particle %d...\n", ip);
@@ -86,59 +87,16 @@ void compute_force_short_range(
             forces[3*jp]     -= fx;
             forces[3*jp + 1] -= fy;
             forces[3*jp + 2] -= fz;
+
+            // potentiel
+            shift_potential = qi * qj * erf_term_c * inv_rc;
+            potential += qi * qj * erf_term / r - shift_potential;
+
             // mpi_fprintf(stderr,"Short-range force between particles %d and %d: fx = %f, fy = %f, fz = %f\n", ip, jp, fx, fy, fz);
         }
     }
+    return potential; 
 }
-
-double compute_energy_short_range_pairwise(
-    int n_p,
-    double *pos,
-    double *charges,
-    double R_c,
-    double L
-) {
-    double sigma = R_c / 3.0;
-    double energy = 0.0;
-
-    for (int ip = 0; ip < n_p; ip++) {
-
-        double px = pos[3 * ip];
-        double py = pos[3 * ip + 1];
-        double pz = pos[3 * ip + 2];
-        double qi = charges[ip];
-
-        for (int jp = ip + 1; jp < n_p; jp++) {
-
-            double dx = px - pos[3 * jp];
-            double dy = py - pos[3 * jp + 1];
-            double dz = pz - pos[3 * jp + 2];
-
-            // PBC
-            dx -= L * round(dx / L);
-            dy -= L * round(dy / L);
-            dz -= L * round(dz / L);
-
-            double r2 = dx * dx + dy * dy + dz * dz;
-            double r  = sqrt(r2);
-
-            if (r > R_c || r == 0.0) continue;
-
-            double qj = charges[jp];
-
-            double x = r / (sqrt(2.0) * sigma);
-            double erf_term = 1.0 - erf(x);
-
-            // potentiel
-            double V = qi * qj * erf_term / r;
-
-            energy += V;
-        }
-    }
-
-    return energy;
-}
-
 
 // /*
 // Compute the forces on each particle by computing the field from the potential using finite differences.
@@ -172,8 +130,7 @@ double compute_force_fd(
     long int k0, k1, k2;
     double E, qc;
 
-    double *forces_sr = calloc(3 * n_p, sizeof(double)); // Temporary array to store short-range forces
-
+    
     int n_loc = get_n_loc();
     int n_start = get_n_start();
 
@@ -184,20 +141,6 @@ double compute_force_fd(
     // Exchange the top and bottom slices
     mpi_grid_exchange_bot_top(phi, n_loc, n);
 
-    //printf(smoothing ? "Using smoothing with R_c = %f\n" : "Not using smoothing\n", R_c);
-
-    if (smoothing) {
-        compute_force_short_range(
-            n_p,
-            pos,
-            charges,
-            forces_sr, 
-            R_c,
-            L
-        );
-    }
-     
-    //printf(forces_sr[0] != 0.0 ? "Short-range forces computed\n" : "No short-range forces computed\n");
     double sum_q = 0.0;
     #pragma omp parallel for private(i, j, k, i0, i1, i2, in2, j0, j1, j2, jn, k0, k1, k2, E, qc, px, py, pz, chg) reduction(+:sum_q)
     for (int ip = 0; ip < n_p; ip++) {
@@ -244,18 +187,32 @@ double compute_force_fd(
         }
     }
 
-    //add the short-range forces to the total forces
-    // mpi_fprintf(stderr, "Adding short-range forces to the total forces...\n");
-    // mpi_fprintf(stderr, "Before forces: %f %f %f\n", forces[0], forces[1], forces[2]);
-    for (int i = 0; i < 3 * n_p; i++) {
-        forces[i] += forces_sr[i];
-        // mpi_fprintf(stderr, "forces_sr[%d] = %f\n", i, forces_sr[i]);
+    double potential_sr = 0;
+
+    if (smoothing) {
+        double *forces_sr = calloc(3 * n_p, sizeof(double)); // Temporary array to store short-range forces
+        
+        // compute sr electrostic forces
+        potential_sr = compute_force_short_range(
+            n_p,
+            pos,
+            charges,
+            forces_sr, 
+            R_c,
+            L
+        );
+
+        // // add short-range forces to total forces
+        daxpy(forces_sr, forces, 1, 3 * n_p); // forces = forces + forces_sr
+
+        free(forces_sr);
     }
-    // mpi_fprintf(stderr, "After forces: %f %f %f\n\n", forces[0], forces[1], forces[2]);
+  
     allreduce_sum(&sum_q, 1);
     allreduce_sum(forces, 3 * n_p);
 
-    return sum_q;
+    
+    return potential_sr;
 }
 
 /*
