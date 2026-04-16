@@ -494,7 +494,7 @@ class SolverMD(Logger):
         capi.get_q(rho)
 
         # gaussian_filter expects sigma in grid-cell units, while R_c is in length units.
-        sigma_grid = (self.mdv.R_c / 3) / self.h
+        sigma_grid = ((self.mdv.R_c / cst.a0) / 3) / self.h
         rho_smooth = gaussian_filter(rho, sigma=sigma_grid, mode='wrap')
         rho_smooth = np.ascontiguousarray(rho_smooth)
         
