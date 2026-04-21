@@ -233,6 +233,7 @@ struct particles {
 
     bool smoothing; 
     double R_c;
+    double sigma_gauss;
 };
 
 struct integrator {

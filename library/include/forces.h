@@ -5,7 +5,7 @@
 double compute_force_fd(
     int n_grid, int n_p, double h, int num_neigh,
     double *phi, long int *neighbors, double *charges, double *pos, double *forces,
-    double (*g)(double, double, double), bool smoothing, double R_c
+    double (*g)(double, double, double), bool smoothing, double R_c, double sigma_gauss
 );
 double compute_force_short_range(
     int n_p,
@@ -13,6 +13,7 @@ double compute_force_short_range(
     double *charges,
     double *forces,
     double R_c,
+    double sigma_gauss,
     double L
 );
 double compute_tf_forces(int n_p, double L, double *pos, double *params, double r_cut, double *forces);

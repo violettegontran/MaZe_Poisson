@@ -340,12 +340,19 @@ class SolverMD(Logger):
         elif potential == 'SC':
             pot_params = self.get_sc_params()
 
-        # Pass a concrete cutoff value to the C API even when smoothing is disabled.
+        # Pass concrete smoothing parameters to the C API even when smoothing is disabled.
         R_c = 0.0
+        sigma_gauss = 0.0
         if self.mdv.smoothing:
             if self.mdv.R_c is None:
                 raise ValueError("Cutoff radius not specified (R_c is None)")
+            sigma_gauss_ang = (
+                self.mdv.sigma_gauss
+                if self.mdv.sigma_gauss is not None
+                else self.mdv.R_c / 3.0
+            )
             R_c = self.mdv.R_c / cst.a0
+            sigma_gauss = sigma_gauss_ang / cst.a0
 
         # print(f"Using potential parameters: {pot_params}")
 
@@ -353,7 +360,7 @@ class SolverMD(Logger):
             self.N, self.N_typs, self.L, self.h, self.N_p,
             pot_id, ca_scheme_id,
             types, pos, vel, mass, charges,
-            pot_params, self.mdv.smoothing, R_c
+            pot_params, self.mdv.smoothing, R_c, sigma_gauss
         )
         
         if self.mdv.poisson_boltzmann:
@@ -490,11 +497,16 @@ class SolverMD(Logger):
         #print("Performing smoothing.")
         if self.mdv.R_c is None:
             raise ValueError("Cutoff radius not specified (R_c is None)")
+        sigma_gauss_ang = (
+            self.mdv.sigma_gauss
+            if self.mdv.sigma_gauss is not None
+            else self.mdv.R_c / 3.0
+        )
         rho = np.zeros((self.N, self.N, self.N), dtype=np.float64)
         capi.get_q(rho)
 
-        # gaussian_filter expects sigma in grid-cell units, while R_c is in length units.
-        sigma_grid = ((self.mdv.R_c / cst.a0) / 3) / self.h
+        # gaussian_filter expects sigma in grid-cell units, while sigma_gauss is in length units.
+        sigma_grid = (sigma_gauss_ang / cst.a0) / self.h
         rho_smooth = gaussian_filter(rho, sigma=sigma_grid, mode='wrap')
         rho_smooth = np.ascontiguousarray(rho_smooth)
         

@@ -52,12 +52,13 @@ void solver_initialize_grid_pois_boltz(double w, double kbar2, int nonpolar_enab
 void solver_initialize_particles(
     int n, int n_typ, double L, double h, int n_p, int pot_type, int cas_type,
     int *types, double *pos, double *vel, double *mass, double *charges,
-    double *pot_params, bool smoothing, double R_c) 
+    double *pot_params, bool smoothing, double R_c, double sigma_gauss) 
 {
     g_particles = particles_init(n, n_p, n_typ, L, h, cas_type);
 
     g_particles->smoothing = smoothing;
     g_particles->R_c = R_c;
+    g_particles->sigma_gauss = sigma_gauss;
 
     memcpy(g_particles->types, types, n_p * sizeof(int));
     memcpy(g_particles->pos, pos, n_p * 3 * sizeof(double));

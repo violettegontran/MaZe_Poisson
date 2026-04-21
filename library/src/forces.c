@@ -13,9 +13,9 @@ double compute_force_short_range(
     double *charges,
     double *forces, // Output forces on each particle (n_p, 3)
     double R_c,
+    double sigma_gauss,
     double L
 ) {
-    double sigma = R_c / 3.0;
     double shift_potential, potential = 0.0;
 
     for (int ip = 0; ip < n_p; ip++) {
@@ -46,7 +46,7 @@ double compute_force_short_range(
             double inv_r2 = inv_r * inv_r;
             double inv_r3 = inv_r2 * inv_r;
 
-            double x = r / (sqrt(2.0) * sigma);
+            double x = r / (sqrt(2.0) * sigma_gauss);
 
             double erf_term = 1.0 - erf(x);
             double exp_term = exp(-x*x);
@@ -54,7 +54,7 @@ double compute_force_short_range(
             double inv_rc  =1.0 / R_c;
             double inv_r2c = inv_rc * inv_rc;
             double inv_r3c = inv_r2c * inv_rc;
-            double xc = R_c / (sqrt(2.0) * sigma);
+            double xc = R_c / (sqrt(2.0) * sigma_gauss);
             double erf_term_c = 1.0 - erf(xc);
             double exp_term_c = exp(-xc*xc);
 
@@ -62,14 +62,14 @@ double compute_force_short_range(
                 qi * qj *
                 (
                     erf_term_c * inv_r3c +
-                    (sqrt(2.0) / (sqrt(M_PI) * sigma)) * exp_term_c * inv_r2c
+                    (sqrt(2.0) / (sqrt(M_PI) * sigma_gauss)) * exp_term_c * inv_r2c
                 );
 
             double factor =
                 qi * qj *
                 (
                     erf_term * inv_r3 +
-                    (sqrt(2.0) / (sqrt(M_PI) * sigma)) * exp_term * inv_r2
+                    (sqrt(2.0) / (sqrt(M_PI) * sigma_gauss)) * exp_term * inv_r2
                 );
 
             //Apply shifted of the forces to ensure that the forces go to zero at the cutoff distance
@@ -118,7 +118,7 @@ double compute_force_short_range(
 double compute_force_fd(
     int n_grid, int n_p, double h, int num_neigh,
     double *phi, long int *neighbors, double *charges, double *pos, double *forces,
-    double (*g)(double, double, double), bool smoothing, double R_c
+    double (*g)(double, double, double), bool smoothing, double R_c, double sigma_gauss
 ) {
     int nn3 = num_neigh * 3;
     long int n = n_grid;
@@ -199,6 +199,7 @@ double compute_force_fd(
             charges,
             forces_sr, 
             R_c,
+            sigma_gauss,
             L
         );
 
